@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import typing
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
@@ -463,6 +465,16 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
+        elif (
+            sys.version_info.major == 3
+            and sys.version_info.minor >= 9
+            and typing.get_origin(type_) is typing.Annotated
+        ):
+            generic_args = typing.get_args(type_)
+            model_name = generic_args[0]
+            model_path = generic_args[1]
+            as_lazy_type = LazyType[model_name, model_path]
+            return self.from_type(as_lazy_type)
 
         raise TypeError(f"Unexpected type '{type_}'")
 
