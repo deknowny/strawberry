@@ -52,12 +52,28 @@ class StrawberryAnnotation:
 
     def resolve(self) -> Union[StrawberryType, type]:
         annotation: object
+
+        # Specific Annotated case. Should
+        # convert all Annotated to LazyType
+        if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+            copied_namespace = self.namespace.copy()
+            for model_name, model_typing in copied_namespace.items():
+                if typing.get_origin(model_typing) is typing.Annotated:
+                    generic_args = typing.get_args(model_typing)
+                    model_name = generic_args[0]
+                    if isinstance(model_name, typing.ForwardRef):
+                        model_name = model_name.__forward_arg__
+
+                    model_path = generic_args[1]
+                    as_lazy_type = LazyType[model_name, model_path]
+                    self.namespace[model_name] = as_lazy_type
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
         else:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+
         if evaled_type is None:
             raise ValueError("Annotation cannot be plain None type")
         if self._is_async_generator(evaled_type):
