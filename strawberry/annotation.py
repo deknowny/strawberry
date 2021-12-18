@@ -67,6 +67,7 @@ class StrawberryAnnotation:
                     model_path = generic_args[1]
                     as_lazy_type = LazyType[model_name, model_path]
                     self.namespace[model_name] = as_lazy_type
+
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
         else:
@@ -80,6 +81,13 @@ class StrawberryAnnotation:
             evaled_type = self._strip_async_generator(evaled_type)
         if self._is_lazy_type(evaled_type):
             return evaled_type
+
+        if (
+            sys.version_info.major == 3
+            and sys.version_info.minor >= 9
+            and typing.get_origin(evaled_type) is typing.Annotated
+        ):
+            return typing.get_args(evaled_type)[0]
 
         if self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in evaled_type.__args__):

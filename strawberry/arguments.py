@@ -160,6 +160,8 @@ def convert_argument(
         type_ = cast(type, type_)
         return type_(**kwargs)
 
+    return type_(value)
+
     raise UnsupportedTypeError(type_)
 
 

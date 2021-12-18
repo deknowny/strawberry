@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-import typing
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
@@ -454,24 +452,27 @@ class GraphQLCoreConverter:
             return self.from_object(type_definition)
         elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
-            return self.from_enum(enum_definition)
+            new_enum = self.from_enum(enum_definition)
+            return new_enum
         elif isinstance(type_, TypeDefinition):  # TODO: Replace with StrawberryObject
             return self.from_object(type_)
         elif isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
         elif isinstance(type_, LazyType):
-            return self.from_type(type_.resolve_type())
+            new = self.from_type(type_.resolve_type())
+            # print(type(new))
+            return new
         elif compat.is_scalar(
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-        elif (
-            sys.version_info.major == 3
-            and sys.version_info.minor >= 9
-            and typing.get_origin(type_) is typing.Annotated
-        ):
-            baked_lazy_type = self.from_type(typing.get_args(type_)[0])
-            return baked_lazy_type
+        # elif (
+        #     sys.version_info.major == 3
+        #     and sys.version_info.minor >= 9
+        #     and typing.get_origin(type_) is typing.Annotated
+        # ):
+        #     baked_lazy_type = self.from_type(typing.get_args(type_)[0])
+        #     return baked_lazy_type
 
         raise TypeError(f"Unexpected type '{type_}'")
 
